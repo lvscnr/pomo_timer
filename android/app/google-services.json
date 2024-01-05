@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "970583709015",
+    "project_id": "test-timer-lvscnr",
+    "storage_bucket": "test-timer-lvscnr.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970583709015:android:a776cfcba4951538d95a12",
+        "android_client_info": {
+          "package_name": "com.example.pomo_timer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdOWmDuHzv6pHEpHwjAlIkfbEVypuymqY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970583709015:android:c73c9f5adcc515acd95a12",
+        "android_client_info": {
+          "package_name": "com.example.stay_productive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdOWmDuHzv6pHEpHwjAlIkfbEVypuymqY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
