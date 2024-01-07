@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math'; // Import the dart:math library
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:pomo_timer/utils/color_utils.dart';
@@ -12,11 +13,22 @@ class PomodoroTimer extends StatefulWidget {
 
 class _PomodoroTimerState extends State<PomodoroTimer> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final List<String> flowerNames = [
+    'flower1',
+    'flower2',
+    'flower3',
+    'flower4',
+    'flower5'
+  ];
+
   int _duration = 25; // Default timer duration in minutes
   int _currentMinutes = 25;
   int _currentSeconds = 0;
   bool _isRunning = false;
   Timer? _timer;
+  DateTime? startTime;
+  String assignedFlower = ''; // Store the assigned flower name
+  bool initialPhase = true; // Flag to check if it's the initial phase
 
   @override
   void initState() {
@@ -29,6 +41,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
       _timer?.cancel();
       _updateFirestoreTimer(true);
     } else {
+      startTime = DateTime.now();
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (_currentMinutes > 0 || _currentSeconds > 0) {
           setState(() {
@@ -49,11 +62,27 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     setState(() {
       _isRunning = !_isRunning;
 
+      // If the user clicks the start button, assign a random flower
+      if (_isRunning) {
+        assignRandomFlower();
+        initialPhase = false; // Update initialPhase flag
+      }
+
+      // If the user clicks the stop button, reset the timer to 00:00
       // If the user clicks the stop button, reset the timer to 00:00
       if (!_isRunning) {
         _resetTimer();
+        initialPhase = true; // Reset initialPhase flag when stopping the timer
       }
     });
+  }
+
+  // Function to assign a random flower
+  void assignRandomFlower() {
+    final random = Random();
+    final randomIndex = random.nextInt(flowerNames.length);
+    assignedFlower = flowerNames[randomIndex];
+    print('Assigned flower: $assignedFlower');
   }
 
   void _resetTimer() {
@@ -62,6 +91,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
       _currentMinutes = 0;
       _currentSeconds = 0;
       _isRunning = false;
+      initialPhase = true; // Reset initialPhase flag
     });
   }
 
@@ -69,14 +99,32 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     final CollectionReference usersCollection = _firestore.collection('users');
     final DocumentReference userDoc = usersCollection
         .doc('bB7NRvX9l1ViztylqTTkXWJZ9IS2'); // Replace with user-specific ID
+
+    CollectionReference timersCollection = userDoc.collection('PomodoroTimers');
+
     if (isStopped) {
-      await userDoc.collection('PomodoroTimers').doc('end_timer').set({
+      await timersCollection.add({
+        'start_timer': startTime,
         'end_timer': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'timer_finished': false,
+        'timerDuration': _duration,
+      }).then((value) {
+        print('End timer added successfully with ID: ${value.id}');
+      }).catchError((error) {
+        print('Error adding end timer: $error');
+      });
     } else {
-      await userDoc.collection('PomodoroTimers').doc('timerFinished').set({
+      await timersCollection.add({
+        'start_timer': startTime,
+        'end_timer': FieldValue.serverTimestamp(),
         'timerFinished': true,
-      }, SetOptions(merge: true));
+        'timerDuration': _duration,
+        'flowerReceived': assignedFlower,
+      }).then((value) {
+        print('Timer finished status added successfully with ID: ${value.id}');
+      }).catchError((error) {
+        print('Error adding timer finished status: $error');
+      });
     }
   }
 
@@ -101,15 +149,20 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
           children: [
             Stack(
               children: [
-                const CircleAvatar(
-                  backgroundImage: AssetImage('assets/images/phase1.png'),
+                // Dynamically set the background image based on the assigned flower or initial phase
+                CircleAvatar(
+                  backgroundImage: AssetImage(initialPhase
+                      ? 'assets/images/phase1.png'
+                      : 'assets/images/${assignedFlower}_phase5.png'),
                   radius: 120,
                 ),
                 Positioned.fill(
                   child: CircularProgressIndicator(
-                    value: 1 -
-                        ((_currentMinutes * 60 + _currentSeconds) /
-                            (_duration * 60)),
+                    value: initialPhase
+                        ? 1.0
+                        : 1 - // If it's the initial phase, set the value to 1.0
+                            ((_currentMinutes * 60 + _currentSeconds) /
+                                (_duration * 60)),
                     backgroundColor: Colors.grey,
                     valueColor: AlwaysStoppedAnimation<Color>(
                         hexStringToColor("0A7B79")),
@@ -151,13 +204,13 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: () => _setDuration(1),
-                  child: const Text('1 min'),
+                  onPressed: () => _setDuration(25),
+                  child: const Text('25 min'),
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: () => _setDuration(25),
-                  child: const Text('25 min'),
+                  onPressed: () => _setDuration(30),
+                  child: const Text('30 min'),
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
